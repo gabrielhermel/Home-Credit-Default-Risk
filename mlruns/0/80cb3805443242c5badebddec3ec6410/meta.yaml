@@ -1,0 +1,15 @@
+artifact_uri: file:///home/gabriel/OC_DS_Projects/project_7/mlruns/0/80cb3805443242c5badebddec3ec6410/artifacts
+end_time: 1682253209790
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 80cb3805443242c5badebddec3ec6410
+run_name: legendary-auk-38
+run_uuid: 80cb3805443242c5badebddec3ec6410
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1682253208853
+status: 3
+tags: []
+user_id: gabriel

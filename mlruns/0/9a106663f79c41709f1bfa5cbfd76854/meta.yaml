@@ -1,0 +1,15 @@
+artifact_uri: file:///home/gabriel/OC_DS_Projects/project_7/mlruns/0/9a106663f79c41709f1bfa5cbfd76854/artifacts
+end_time: 1682253184097
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 9a106663f79c41709f1bfa5cbfd76854
+run_name: capricious-frog-223
+run_uuid: 9a106663f79c41709f1bfa5cbfd76854
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1682253182823
+status: 3
+tags: []
+user_id: gabriel
