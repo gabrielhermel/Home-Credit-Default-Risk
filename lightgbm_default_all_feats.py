@@ -2,40 +2,40 @@ import mlflow
 import mlflow.lightgbm
 import lightgbm as lgb
 import numpy as np
-import pandas as pd
-from sklearn.model_selection import KFold
+from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import accuracy_score, roc_auc_score
 from business_cost_metric import business_cost_metric
+import datetime
+import json
+from make_train_valid_test import gen_train_valid_test
 
-# Read the Feather file into a DataFrame
-df = pd.read_feather("engin_feats.ftr")
+# Get start timestamp
+start_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-# Remove index column
-if "index" in df.columns:
-    df = df.drop(columns=["index"])
-
-# Filter out rows with null values in the "TARGET" column
-df = df[df["TARGET"].notnull()].reset_index()
+# Get preprocessed training set
+preproc_app_train_df, _, _ = gen_train_valid_test(smote=True)
 
 # Separate the features and target variable
-X = df.drop(columns=["TARGET"])
-y = df["TARGET"]
+X = preproc_app_train_df.drop(columns=["TARGET"])
+y = preproc_app_train_df["TARGET"]
 
-# Define 5-fold cross-validation
-kf = KFold(n_splits=5, shuffle=True, random_state=42)
+# Define Stratified K-Fold cross-validation
+skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
 
 # Initialize metric lists to store the results for each fold
 business_costs = []
 accuracies = []
 aucs = []
 
+# Initialize model with default parameters
+model = lgb.LGBMClassifier()
+
 # Iterate through the KFold splits
-for fold, (train_index, valid_index) in enumerate(kf.split(X)):
+for fold, (train_index, valid_index) in enumerate(skf.split(X, y)):
     X_train, X_valid = X.iloc[train_index], X.iloc[valid_index]
     y_train, y_valid = y.iloc[train_index], y.iloc[valid_index]
 
-    # Train the LightGBM model with default parameters
-    model = lgb.LGBMClassifier()
+    # Train the LightGBM model
     model.fit(X_train, y_train)
 
     # Make predictions on the validation set
@@ -52,16 +52,19 @@ for fold, (train_index, valid_index) in enumerate(kf.split(X)):
     accuracies.append(accuracy)
     aucs.append(auc)
 
-    # Log the metrics and model artifact with mlflow
+    # Log the parameters, metrics and model artifact with mlflow
     with mlflow.start_run():
-        mlflow.log_param("model_type", "LightGBM - Default Parameters - All Features")
-        mlflow.log_param("fold", fold)
+        mlflow.set_tag("mlflow.runName", f"LightGBM ({start_time}) ({fold})")
+        mlflow.log_param("params", "Default")
+        mlflow.log_param("features", "All")
+        mlflow.log_param("fold", str(fold))
         mlflow.log_metric("business_cost", business_cost)
         mlflow.log_metric("accuracy", accuracy)
         mlflow.log_metric("auc", auc)
         mlflow.lightgbm.log_model(
             model, f"model_artifacts/lightgbm_default_all_feats/fold_{fold}"
         )
+        mlflow.log_param("model_params", json.dumps(model.get_params()))
 
 # Calculate the mean metrics across the 5 folds
 mean_business_cost = np.mean(business_costs)
@@ -70,7 +73,11 @@ mean_auc = np.mean(aucs)
 
 # Log the mean metrics with mlflow
 with mlflow.start_run():
-    mlflow.log_param("model_type", "LightGBM - Default Parameters - All Features")
-    mlflow.log_metric("mean_business_cost", mean_business_cost)
-    mlflow.log_metric("mean_accuracy", mean_accuracy)
-    mlflow.log_metric("mean_auc", mean_auc)
+    mlflow.set_tag("mlflow.runName", f"LightGBM ({start_time}) (avg)")
+    mlflow.log_param("params", "Default")
+    mlflow.log_param("features", "All")
+    mlflow.log_param("fold", "Average")
+    mlflow.log_metric("business_cost", mean_business_cost)
+    mlflow.log_metric("accuracy", mean_accuracy)
+    mlflow.log_metric("auc", mean_auc)
+    mlflow.log_param("model_params", json.dumps(model.get_params()))

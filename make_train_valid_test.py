@@ -1,11 +1,16 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.experimental import enable_iterative_imputer
+
+# from sklearn.impute import IterativeImputer
+from sklearn.impute import KNNImputer
 from preprocessing import preprocess
 from imblearn.over_sampling import SMOTE
+import argparse
 
 
-def gen_train_valid_test(smote=False):
+def gen_train_valid_test(smote=False, impute=False):
     # Read and preprocess DFs
     app_train_df = pd.read_csv("input/application_train.csv")
     app_test_df = pd.read_csv("input/application_test.csv")
@@ -28,6 +33,33 @@ def gen_train_valid_test(smote=False):
     preproc_app_test_df = preproc_app_test_df[
         [x for x in preproc_app_train_cols if x != "TARGET"]
     ].reset_index(drop=True)
+
+    # Convert boolean values to integers
+    bool_cols = [
+        x for x in preproc_app_train_cols if preproc_app_train_df[x].dtype == "bool"
+    ]
+    preproc_app_train_df[bool_cols] = preproc_app_train_df[bool_cols].astype(int)
+
+    # Smote does not accept missing values; they must be imputed
+    if smote or impute:
+        # # Create and fit the iterative imputer
+        # imputed_data = IterativeImputer(random_state=0).fit_transform(
+        #     preproc_app_train_df
+        # )
+        # Create and fit the knn imputer
+        imputed_data = KNNImputer(n_neighbors=5).fit_transform(preproc_app_train_df)
+
+        # Convert the imputed data back to a DataFrame
+        preproc_app_train_df = pd.DataFrame(
+            imputed_data,
+            columns=preproc_app_train_df.columns,
+            index=preproc_app_train_df.index,
+        )
+
+        # Round the imputed values for boolean columns
+        preproc_app_train_df[bool_cols] = (
+            preproc_app_train_df[bool_cols].round().astype(int)
+        )
 
     # Apply SMOTE if the parameter is True
     if smote:
@@ -59,20 +91,34 @@ def gen_train_valid_test(smote=False):
     return [preproc_app_train_df, preproc_app_valid_df, preproc_app_test_df]
 
 
-def main():
+def main(smote, impute):
     (
         preproc_app_train_df,
         preproc_app_valid_df,
         preproc_app_test_df,
-    ) = gen_train_valid_test()
+    ) = gen_train_valid_test(smote=smote, impute=impute)
     # Save DFs
+    addit_step = "_smote" if smote else "_imputed" if impute else ""
     print(f"Preprocessed Training DataFrame shape: {preproc_app_train_df.shape}")
-    preproc_app_train_df.to_feather("preproc_app_train_df.ftr")
+    preproc_app_train_df.to_feather(f"preproc{addit_step}_app_train_df.ftr")
     print(f"Preprocessed Validation DataFrame shape: {preproc_app_valid_df.shape}")
-    preproc_app_valid_df.to_feather("preproc_app_valid_df.ftr")
+    preproc_app_valid_df.to_feather(f"preproc{addit_step}_app_valid_df.ftr")
     print(f"Preprocessed Testing DataFrame shape: {preproc_app_test_df.shape}")
-    preproc_app_test_df.to_feather("preproc_app_test_df.ftr")
+    preproc_app_test_df.to_feather(f"preproc{addit_step}_app_test_df.ftr")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--smote", action="store_true", default=False, help="Enable SMOTE if specified"
+    )
+    parser.add_argument(
+        "--impute",
+        action="store_true",
+        default=False,
+        help="Enable imputation if specified",
+    )
+
+    args = parser.parse_args()
+
+    main(args.smote, args.impute)
