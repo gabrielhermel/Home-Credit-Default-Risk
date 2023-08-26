@@ -46,7 +46,7 @@ df["DAYS_EMPLOYED"].replace(365243, np.nan, inplace=True)
 
 # application_train/test
 # def application(df, num_rows=None, nan_as_category=False):
-def application(engin_feats=True, num_rows=None, nan_as_category=False):
+def application(nan_as_category=False):
     # df = df.reset_index(drop=True)
     df = pd.read_csv("input/application_train.csv")
 
@@ -55,14 +55,12 @@ def application(engin_feats=True, num_rows=None, nan_as_category=False):
 
     # Categorical features with Binary encode (0 or 1; two categories)
     for bin_feature in ["CODE_GENDER", "FLAG_OWN_CAR", "FLAG_OWN_REALTY"]:
-        df[bin_feature], uniques = pd.factorize(df[bin_feature])
+        df[bin_feature] = pd.factorize(df[bin_feature])[0]
     # Categorical features with One-Hot encode
-    df, cat_cols = one_hot_encoder(df, nan_as_category)
+    df = one_hot_encoder(df, nan_as_category)[0]
 
     # NaN values for DAYS_EMPLOYED: 365.243 -> nan
     df["DAYS_EMPLOYED"].replace(365243, np.nan, inplace=True)
-
-    # JOIN FROM HERE
 
     # Some simple new features (percentages)
     df["DAYS_EMPLOYED_PERC"] = df["DAYS_EMPLOYED"] / df["DAYS_BIRTH"]
@@ -70,8 +68,7 @@ def application(engin_feats=True, num_rows=None, nan_as_category=False):
     df["INCOME_PER_PERSON"] = df["AMT_INCOME_TOTAL"] / df["CNT_FAM_MEMBERS"]
     df["ANNUITY_INCOME_PERC"] = df["AMT_ANNUITY"] / df["AMT_INCOME_TOTAL"]
     df["PAYMENT_RATE"] = df["AMT_ANNUITY"] / df["AMT_CREDIT"]
-    # del test_df
-    gc.collect()
+
     return df
 
 
