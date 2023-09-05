@@ -175,6 +175,7 @@ async def plot_glob_feat_import():
 
     # Save the plot as a PNG image to the buffer
     plt.savefig(buffer, format="png")
+    plt.close()
     buffer.seek(0)
 
     # Return the plot as a streaming response with the media type "image/png"
@@ -238,6 +239,7 @@ async def plot_local_feat_import(sk_id: int):
 
     # Save the plot as a PNG image to the buffer
     plt.savefig(buffer, format="png")
+    plt.close()
     buffer.seek(0)
 
     # Return the plot as a streaming response with the media type "image/png"
@@ -329,6 +331,7 @@ async def plot_approv_proba(sk_id: int):
 
     # Save the plot as a PNG image to the buffer
     plt.savefig(buffer, format="png")
+    plt.close()
     buffer.seek(0)
 
     # Return the plot as a streaming response with the media type "image/png"
@@ -451,6 +454,7 @@ async def plot_appl_features(sk_id: int, num_feats: int):
 
     # Save the plot as a PNG image to the buffer
     plt.savefig(buffer, format="png")
+    plt.close()
     buffer.seek(0)
 
     # Return the plot as a streaming response with the media type "image/png"
