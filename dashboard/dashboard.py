@@ -2,9 +2,19 @@
 
 import streamlit as st
 import requests
+import yaml
 
-# Define the FastAPI URL
-fastapi_url = "http://127.0.0.1:8000"
+# Read the configuration file
+with open("config.yaml", "r") as config_file:
+    config = yaml.safe_load(config_file)
+
+# Get the API URL from the configuration file
+fastapi_url = config.get("api", {}).get("url")
+
+# Check that the URL was found
+if not fastapi_url:
+    st.error("FastAPI URL not defined in config.yaml.")
+    st.stop()  # Stop execution
 
 # Initialize session variables
 # Slider value for max number of features
