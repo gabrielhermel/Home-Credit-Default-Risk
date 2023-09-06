@@ -3,6 +3,13 @@
 from fastapi import FastAPI, HTTPException
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
+
+# Import Matplotlib and set a non-interactive backend
+# (necessary for pytest unit tests so GUI runs in main thread)
+import matplotlib
+
+matplotlib.use("Agg")
+
 from matplotlib import pyplot as plt
 import seaborn as sns
 from io import BytesIO
@@ -175,6 +182,7 @@ async def plot_glob_feat_import():
 
     # Save the plot as a PNG image to the buffer
     plt.savefig(buffer, format="png")
+    plt.close()
     buffer.seek(0)
 
     # Return the plot as a streaming response with the media type "image/png"
@@ -186,7 +194,7 @@ async def plot_glob_feat_import():
 async def plot_local_feat_import(sk_id: int):
     # Set the Seaborn theme
     sns.set(style="darkgrid")
-    
+
     # Check if the provided SK_ID_CURR exists in the list of applicant IDs
     if sk_id not in SK_ID_CURR_list:
         # If the applicant is not found, raise an HTTP exception with a 404 status code
@@ -238,6 +246,7 @@ async def plot_local_feat_import(sk_id: int):
 
     # Save the plot as a PNG image to the buffer
     plt.savefig(buffer, format="png")
+    plt.close()
     buffer.seek(0)
 
     # Return the plot as a streaming response with the media type "image/png"
@@ -249,7 +258,7 @@ async def plot_local_feat_import(sk_id: int):
 async def plot_approv_proba(sk_id: int):
     # Set the Seaborn theme
     sns.set(style="darkgrid")
-    
+
     # Check if the provided SK_ID_CURR exists in the list of applicant IDs
     if sk_id not in SK_ID_CURR_list:
         # If the applicant is not found, raise an HTTP exception with a 404 status code
@@ -329,6 +338,7 @@ async def plot_approv_proba(sk_id: int):
 
     # Save the plot as a PNG image to the buffer
     plt.savefig(buffer, format="png")
+    plt.close()
     buffer.seek(0)
 
     # Return the plot as a streaming response with the media type "image/png"
@@ -340,7 +350,7 @@ async def plot_approv_proba(sk_id: int):
 async def plot_appl_features(sk_id: int, num_feats: int):
     # Set the Seaborn theme
     sns.set(style="darkgrid")
-    
+
     # Check if the provided SK_ID_CURR exists in the list of applicant IDs
     if sk_id not in SK_ID_CURR_list:
         # If the applicant is not found, raise an HTTP exception with a 404 status code
@@ -451,6 +461,7 @@ async def plot_appl_features(sk_id: int, num_feats: int):
 
     # Save the plot as a PNG image to the buffer
     plt.savefig(buffer, format="png")
+    plt.close()
     buffer.seek(0)
 
     # Return the plot as a streaming response with the media type "image/png"
