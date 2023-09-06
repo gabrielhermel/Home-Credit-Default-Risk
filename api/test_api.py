@@ -4,14 +4,9 @@ import pytest
 import json
 from fastapi.testclient import TestClient
 import random
-import sys
-import os
-
-# Add the project root directory to the Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Import the FastAPI application
-from api.main import app
+from main import app
 
 # Define a test client for the FastAPI application
 client = TestClient(app)
