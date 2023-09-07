@@ -1,0 +1,37 @@
+on:
+  push:
+    branches:
+      - master
+jobs:
+  pytest_api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python version
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.10.12
+
+      - name: Install dependencies
+        run: |
+          pip install -r api/requirements.txt
+
+      - name: Run pytest
+        run: pytest api/test_api.py
+
+  deploy_api:
+    needs: pytest_api
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to Heroku
+        uses: akhileshns/heroku-deploy@v3.12.14
+        with:
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+          heroku_app_name: "hcdr-api"
+          heroku_email: "gabrieljonathanhermel@gmail.com"
+          appdir: "api"
