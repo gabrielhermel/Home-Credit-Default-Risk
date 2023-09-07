@@ -1,37 +1,67 @@
+# This GitHub Action is triggered when there's a push to the master branch
 on:
   push:
     branches:
       - master
+
+# Define the list of jobs to be executed
 jobs:
+  # Job to test the API
   pytest_api:
+    # Run this job on the latest version of ubuntu
     runs-on: ubuntu-latest
     steps:
+      # Check out the code from the current repo into the runner
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
+      # Set up a specific version of Python on the runner
       - name: Set up Python version
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: 3.10.12
 
+      # Install the necessary dependencies for testing
       - name: Install dependencies
         run: |
           pip install -r api/requirements.txt
 
+      # Execute pytest to run tests for the API
       - name: Run pytest
         run: pytest api/test_api.py
 
+  # Job to deploy the API to Heroku
   deploy_api:
+    # This job depends on the pytest_api job. It will only run if pytest_api succeeds
     needs: pytest_api
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: Deploy to Heroku
+      # Deploy the API to Heroku
+      - name: Deploy API to Heroku
         uses: akhileshns/heroku-deploy@v3.12.14
         with:
-          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-          heroku_app_name: "hcdr-api"
-          heroku_email: "gabrieljonathanhermel@gmail.com"
-          appdir: "api"
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}} # Heroku API key, fetched from repository secrets
+          heroku_app_name: "hcdr-api" # The name of the Heroku app for the API
+          heroku_email: "gabrieljonathanhermel@gmail.com" # Email associated with the Heroku account
+          appdir: "api" # Directory containing the API codebase
+
+  # Job to deploy the Streamlit dashboard to Heroku
+  deploy_dashboard:
+    # This job also depends on the pytest_api job. It will only run if pytest_api succeeds
+    needs: pytest_api
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Deploy the dashboard to Heroku
+      - name: Deploy Dashboard to Heroku
+        uses: akhileshns/heroku-deploy@v3.12.14
+        with:
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}} # Heroku API key, fetched from repository secrets
+          heroku_app_name: "hcdr-dashboard" # The name of the Heroku app for the dashboard
+          heroku_email: "gabrieljonathanhermel@gmail.com" # Email associated with the Heroku account
+          appdir: "dashboard" # Directory containing the dashboard codebase
