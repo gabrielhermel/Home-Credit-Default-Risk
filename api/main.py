@@ -140,25 +140,44 @@ def get_applicant_feats(sk_id: int):
 
 # Define an API endpoint to create and return a global feature importances plot
 @app.get("/plot_glob_feat_import/")
-async def plot_glob_feat_import():
+async def plot_glob_feat_import(num_feats: int):
     # Set the Seaborn theme
     sns.set(style="darkgrid")
 
-    # Create a new figure for the plot with a specified size
-    plt.figure(figsize=(10, 6))
+    # If the number of features is not provided or is invalid, raise an HTTP exception with a 404 status code
+    if num_feats is None or num_feats < 1 or num_feats > len(X_train.columns.to_list()):
+        raise HTTPException(
+            status_code=404, detail=f"Invalid number of features provided."
+        )
+
+    # Get chosen number of features with greatest importance by absolute value
+    selected_feats = {
+        k: glob_feat_import[k]
+        for k in glob_feat_import
+        if k
+        in sorted(
+            glob_feat_import, key=lambda x: abs(glob_feat_import[x]), reverse=True
+        )[:num_feats]
+    }
+
+    # Create a new figure for the plot with a dynamically scaled size
+    plt.figure(figsize=(10, 0.65 + 5.35 * num_feats / len(glob_feat_import)))
+
+    # Use normalized values to get colors from the "coolwarm" colormap
+    colors = plt.cm.coolwarm_r(0.5 * (np.array(list(selected_feats.values())) + 1))
 
     # Create a bar plot using Seaborn, with feature importances as the x-axis and feature names as the y-axis
     ax = sns.barplot(
-        x=list(glob_feat_import.values()),  # Feature importances as x-axis values
-        y=list(glob_feat_import.keys()),  # Feature names as y-axis labels
-        palette="coolwarm",  # Color palette for the bars
+        x=list(selected_feats.values()),  # Feature importances as x-axis values
+        y=list(selected_feats.keys()),  # Feature names as y-axis labels
+        palette=colors,  # Passing manually computed colors
     )
 
     # Set the x-axis limits to control the plot's horizontal range
     plt.xlim(left=-1.0, right=1.0)
 
     # Add text labels to the bars indicating the feature importances
-    for i, value in enumerate(glob_feat_import.values()):
+    for i, value in enumerate(selected_feats.values()):
         text_x = (
             -0.14 if value >= 0 else 0.16
         )  # Adjust text position based on the value
@@ -191,7 +210,7 @@ async def plot_glob_feat_import():
 
 # Define an API endpoint to create and return a local feature importances plot for a specific applicant
 @app.get("/plot_local_feat_import/")
-async def plot_local_feat_import(sk_id: int):
+async def plot_local_feat_import(sk_id: int, num_feats: int):
     # Set the Seaborn theme
     sns.set(style="darkgrid")
 
@@ -202,27 +221,46 @@ async def plot_local_feat_import(sk_id: int):
             status_code=404, detail=f"Applicant with SK_ID {sk_id} not found."
         )
 
+    # If the number of features is not provided or is invalid, raise an HTTP exception with a 404 status code
+    if num_feats is None or num_feats < 1 or num_feats > len(X_train.columns.to_list()):
+        raise HTTPException(
+            status_code=404, detail=f"Invalid number of features provided."
+        )
+
     # Retrieve the features of the specified applicant using their SK_ID_CURR
     applicant_feats = demo_applicants.iloc[SK_ID_CURR_list.index(sk_id)]
 
     # Compute local feature importances for the applicant using the compute_local_feat_import function
     local_feat_import = compute_local_feat_import(applicant_feats)
 
-    # Create a new figure for the plot with a specified size
-    plt.figure(figsize=(10, 6))
+    # Get chosen number of features with greatest importance by absolute value
+    selected_feats = {
+        k: local_feat_import[k]
+        for k in local_feat_import
+        if k
+        in sorted(
+            local_feat_import, key=lambda x: abs(local_feat_import[x]), reverse=True
+        )[:num_feats]
+    }
+
+    # Create a new figure for the plot with a dynamically scaled size
+    plt.figure(figsize=(10, 0.65 + 5.35 * num_feats / len(local_feat_import)))
+
+    # Use normalized values to get colors from the "coolwarm" colormap
+    colors = plt.cm.coolwarm_r(0.5 * (np.array(list(selected_feats.values())) + 1))
 
     # Create a bar plot using Seaborn, with feature importances as the x-axis and feature names as the y-axis
     ax = sns.barplot(
-        x=list(local_feat_import.values()),  # Feature importances as x-axis values
-        y=list(local_feat_import.keys()),  # Feature names as y-axis labels
-        palette="coolwarm",  # Color palette for the bars
+        x=list(selected_feats.values()),  # Feature importances as x-axis values
+        y=list(selected_feats.keys()),  # Feature names as y-axis labels
+        palette=colors,  # Passing manually computed colors
     )
 
     # Set the x-axis limits to control the plot's horizontal range
     plt.xlim(left=-1.0, right=1.0)
 
     # Add text labels to the bars indicating the feature importances
-    for i, value in enumerate(local_feat_import.values()):
+    for i, value in enumerate(selected_feats.values()):
         text_x = (
             -0.14 if value >= 0 else 0.16
         )  # Adjust text position based on the value
@@ -280,21 +318,19 @@ async def plot_approv_proba(sk_id: int):
     percent_class_1 = prob_class_1 * 100
 
     # Create a figure and axis for the plot with a specified size
-    fig, ax = plt.subplots(figsize=(6, 0.8))
-
-    # Define colors for the bars using a coolwarm colormap
-    colors = plt.cm.coolwarm([0.95, 0.05])
+    fig, ax = plt.subplots(figsize=(10, 0.8))
 
     # Define bar positions and widths for class 0 and class 1 probabilities
     bar_positions = [0]
     bar_widths = [percent_class_0]
+    # Define colors for the bars using a coolwarm colormap
+    colors = plt.cm.coolwarm([0.5 + prob_class_0 * 0.5, 0.5 - prob_class_1 * 0.5])
 
     # Create a horizontal bar for class 0 probability
     ax.barh(
         bar_positions,
         bar_widths,
         color=colors[0],
-        label=f"{percent_class_0:.2f}% Class 0",
     )
 
     # Define bar positions and widths for class 1 probability, offset from class 0
@@ -307,7 +343,6 @@ async def plot_approv_proba(sk_id: int):
         bar_widths,
         left=[percent_class_0],  # Position it to the right of class 0 bar
         color=colors[1],
-        label=f"{percent_class_1:.2f}% Class 1",
     )
 
     # Customize the appearance of the plot
@@ -315,13 +350,21 @@ async def plot_approv_proba(sk_id: int):
     ax.set_yticks([0])
     ax.set_yticklabels([])
 
-    # Add text labels for class 0 and class 1 percentages
-    ax.text(0, -0.9, f"{percent_class_0:.2f}%", ha="left", color="black")
-    ax.text(100, -0.9, f"{percent_class_1:.2f}%", ha="right", color="black")
-
     # Set x-axis limits and y-axis limits
     ax.set_xlim(0, 100)
     ax.set_ylim(-1, 0.5)
+
+    # Add text labels for class 0 and class 1 percentages
+    ax.text(
+        percent_class_0 / 2, -0.9, f"{percent_class_0:.2f}%", ha="center", color="black"
+    )
+    ax.text(
+        100 - percent_class_1 / 2,
+        -0.9,
+        f"{percent_class_1:.2f}%",
+        ha="center",
+        color="black",
+    )
 
     # Hide unnecessary spines and ticks
     ax.spines["top"].set_visible(False)
@@ -346,6 +389,7 @@ async def plot_approv_proba(sk_id: int):
 
 
 # Define an API endpoint to create and return a plot of applicant-specific features
+# over distributions of approved and denied applicants
 @app.get("/plot_appl_features/")
 async def plot_appl_features(sk_id: int, num_feats: int):
     # Set the Seaborn theme
@@ -379,7 +423,7 @@ async def plot_appl_features(sk_id: int, num_feats: int):
 
     # Create a figure and axes for the plot based on the number of requested features
     if num_feats == 1:
-        fig, ax = plt.subplots(figsize=(6, 4))
+        fig, ax = plt.subplots(figsize=(10, 5))
         # Select the first feature from the sorted list
         column = sorted_feat_import[0]
 
@@ -396,16 +440,19 @@ async def plot_appl_features(sk_id: int, num_feats: int):
             "lightcoral" if local_feat_import[column] <= 0 else "cornflowerblue"
         )
 
-        # Add a vertical dashed line indicating the value of the feature for the applicant
-        ax.axvline(x=client_value, color=line_color, linestyle="--", label="Client")
-        # Y label in French
-        ax.set_ylabel("Densité")
         # Set the title and legend for the plot
         ax.set_title(column)
         ax.legend()
+        # Add a vertical dashed line indicating the value of the feature for the applicant
+        ax.axvline(x=client_value, color=line_color, linestyle="--", label="Client")
+        # X label same as title, so it's removed
+        ax.set_xlabel("")
+        # Y label in French
+        ax.set_ylabel("Densité")
+        
     # If more than one feature has been requested
     else:
-        num_cols = min(4, num_feats)
+        num_cols = min(2, num_feats)
         num_rows = (num_feats - 1) // num_cols + 1
         # Create subplots for multiple features in a grid layout
         fig, axes = plt.subplots(
@@ -441,13 +488,15 @@ async def plot_appl_features(sk_id: int, num_feats: int):
                 "lightcoral" if local_feat_import[column] <= 0 else "cornflowerblue"
             )
 
-            # Add a vertical dashed line indicating the value of the feature for the applicant
-            ax.axvline(x=client_value, color=line_color, linestyle="--", label="Client")
-            # Y label in French
-            ax.set_ylabel("Densité")
             # Set the title and legend for each subplot
             ax.set_title(column)
             ax.legend()
+            # Add a vertical dashed line indicating the value of the feature for the applicant
+            ax.axvline(x=client_value, color=line_color, linestyle="--", label="Client")
+            # X label same as title, so it's removed
+            ax.set_xlabel("")
+            # Y label in French
+            ax.set_ylabel("Densité")
 
         # Remove any empty subplots if the number of requested features is less than the grid size
         for i in range(num_feats, num_rows * num_cols):

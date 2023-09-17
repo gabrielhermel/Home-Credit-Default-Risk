@@ -63,8 +63,10 @@ def test_get_applicants():
 
 # Test plot_glob_feat_import endpoint
 def test_plot_glob_feat_import():
+    global num_feats  # Declare num_feats as global
+
     # Send a GET request to the endpoint
-    response = client.get("/plot_glob_feat_import/")
+    response = client.get(f"/plot_glob_feat_import/?num_feats={num_feats}")
 
     # Check if the response status code is 200 (OK)
     assert response.status_code == 200
@@ -76,10 +78,13 @@ def test_plot_glob_feat_import():
 # Use the @pytest.mark.filterwarnings decorator to suppress shap_values() warning
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_plot_local_feat_import():
+    global num_feats  # Declare num_feats as global
     global sk_id  # Declare sk_id as global
 
     # Send a GET request to the endpoint
-    response = client.get(f"/plot_local_feat_import/?sk_id={sk_id}")
+    response = client.get(
+        f"/plot_local_feat_import/?sk_id={sk_id}&num_feats={num_feats}"
+    )
 
     # Check if the response status code is 200 (OK)
     assert response.status_code == 200
