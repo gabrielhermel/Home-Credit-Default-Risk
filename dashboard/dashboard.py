@@ -191,8 +191,8 @@ if (
     st.header("Probabilité d'approbation")
     # Add a note about the approval probabililty bar
     st.write(
-        "La partie de la barre en couleurs chaudes représente la probabilité du refus de votre demande "
-        + "de prêt, tandis que la partie en couleurs froides représente la probabilité de son approbation."
+        "La partie de la barre de couleur chaude représente la probabilité du refus de votre demande "
+        + "de prêt, tandis que la partie de couleur froide représente la probabilité de son approbation."
     )
     # Display the probability image from the response
     st.image(prob_response.content)
@@ -218,7 +218,7 @@ def dist_clicked():
 # Add feature distribution button to the sidebar
 if (
     st.sidebar.button(
-        "Distribution des caractéristiques par rapport aux miennes",
+        "Mes caractéristiques par rapport à celles des autres demandeurs",
         on_click=dist_clicked,
     )
     or st.session_state["curr_plot"] == "distribs"
@@ -237,7 +237,7 @@ if (
         st.stop()  # Stop execution
 
     # Add a header
-    st.header("Comparaison de vos caractéristiques avec les prêts approuvés et refusés")
+    st.header("Comparaison de vos caractéristiques avec celles des demandeurs approuvés et refusés")
     # Add a note on how to interpret the feature distribution plots
     st.write(
         "Chaque graphique ci-dessous représente une caractéristique de votre profil financier. "
