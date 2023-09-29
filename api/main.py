@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from fastapi import FastAPI, HTTPException
-from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 
 # Import Matplotlib and set a non-interactive backend
@@ -77,7 +76,7 @@ demo_applicants = demo_applicants.drop(columns="SK_ID_CURR")
 TARGET_list = list(map(int, model.predict(demo_applicants).tolist()))
 # Create a dictionary with the applicant's IDs as keys and their approval status as values
 ids_and_approv = result_dict = {
-    SK_ID: "Approuvée" if TARGET == 1 else "Refusée"
+    SK_ID: "Approuvée" if TARGET == 0 else "Refusée"
     for SK_ID, TARGET in zip(SK_ID_CURR_list, TARGET_list)
 }
 
@@ -89,7 +88,7 @@ app = FastAPI()
 def compute_local_feat_import(row_series):
     # Define an inner function to make predictions using the model
     def pipeline_predict(data):
-        return model.predict_proba(data)[:, 1]  # Predict the probability of class 1
+        return model.predict_proba(data)[:, 0]  # Predict the probability of class 0
 
     # Create a SHAP (SHapley Additive exPlanations) explainer for the model
     explainer = shap.Explainer(pipeline_predict, X_train)
@@ -322,26 +321,26 @@ async def plot_approv_proba(sk_id: int):
 
     # Define bar positions and widths for class 0 and class 1 probabilities
     bar_positions = [0]
-    bar_widths = [percent_class_0]
+    bar_widths = [percent_class_1]
     # Define colors for the bars using a coolwarm colormap
-    colors = plt.cm.coolwarm([0.5 + prob_class_0 * 0.5, 0.5 - prob_class_1 * 0.5])
+    colors = plt.cm.coolwarm([0.5 + prob_class_1 * 0.5, 0.5 - prob_class_0 * 0.5])
 
-    # Create a horizontal bar for class 0 probability
+    # Create a horizontal bar for class 1 probability
     ax.barh(
         bar_positions,
         bar_widths,
         color=colors[0],
     )
 
-    # Define bar positions and widths for class 1 probability, offset from class 0
+    # Define bar positions and widths for class 0 probability, offset from class 1
     bar_positions = [0]
-    bar_widths = [percent_class_1]
+    bar_widths = [percent_class_0]
 
-    # Create a horizontal bar for class 1 probability
+    # Create a horizontal bar for class 0 probability
     ax.barh(
         bar_positions,
         bar_widths,
-        left=[percent_class_0],  # Position it to the right of class 0 bar
+        left=[percent_class_1],  # Position it to the right of class 1 bar
         color=colors[1],
     )
 
@@ -356,12 +355,12 @@ async def plot_approv_proba(sk_id: int):
 
     # Add text labels for class 0 and class 1 percentages
     ax.text(
-        percent_class_0 / 2, -0.9, f"{percent_class_0:.2f}%", ha="center", color="black"
+        percent_class_1 / 2, -0.9, f"{percent_class_1:.2f}%", ha="center", color="black"
     )
     ax.text(
-        100 - percent_class_1 / 2,
+        100 - percent_class_0 / 2,
         -0.9,
-        f"{percent_class_1:.2f}%",
+        f"{percent_class_0:.2f}%",
         ha="center",
         color="black",
     )
